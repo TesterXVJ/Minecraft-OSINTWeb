@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    <meta property="og:title" content="FastDex Osint Web">
+    <meta property="og:description" content="Basic and free Minecraft Osint Web 2025.">
+    <meta property="og:url" content="http://osintmc.vercel.app">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastDex Server Osint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4">
+        <h1 class="text-4xl font-bold text-center mb-8">FastDex Server Osint</h1>
+
+        <div class="flex justify-center mb-8">
+            <input id="server-ip" class="p-3 rounded-l-md border border-gray-700 bg-gray-800 text-white focus:outline-none" placeholder="Introduce la IP del servidor">
+            <button id="search-btn" class="p-3 rounded-r-md bg-gray-800 hover:bg-gray-700 text-white">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+
+        <div id="server-info" class="bg-gray-800 p-6 rounded-md shadow-lg mb-8">
+            <h2 class="text-2xl font-bold mb-4">Información de la Busqueda</h2>
+            <div id="server-details">
+                <p class="text-gray-400">Ingresa una IP para obtener información.</p>
+            </div>
+        </div>
+
+        <div id="server-results" class="flex justify-between gap-4 mb-8 opacity-0 translate-y-4 transition-all duration-500">
+            <div id="left-column" class="w-1/2 bg-gray-800 p-6 rounded-md shadow-lg">
+                <h2 class="text-2xl font-bold mb-4">Detalles Generales</h2>
+                <div id="server-details-left">
+                    <p class="text-gray-400">No se ha encontrado datos.</p>
+                </div>
+            </div>
+
+            <div id="right-column" class="w-1/2 bg-gray-800 p-6 rounded-md shadow-lg">
+                <h2 class="text-2xl font-bold mb-4">Otros Detalles</h2>
+                <div id="server-details-right">
+                    <p class="text-gray-400">No se ha encontrado datos.</p>
+                </div>
+            </div>
+        </div>
+        
+    <style>
+        ::-webkit-scrollbar {
+        display: none;
+        }
+    </style>
+
+        <div id="chart-column" class="w-full bg-gray-800 p-6 rounded-md shadow-lg mb-8 opacity-0 translate-y-4 transition-all duration-500">
+            <h2 class="text-2xl font-bold mb-4">Estadísticas del Servidor</h2>
+            <canvas id="serverChart" class="rounded-md" style="width: 100%; height: 300px;"></canvas>
+        </div>
+    </div>
+
+    <canvas id="x" class="bg-gray-900" style="width: 100%; height: 40px;"></canvas>
+
+        <!-- Contenedor de notificaciones -->
+        <div id="notifications" class="fixed top-0 right-0 mt-4 mr-4 space-y-4 z-50"></div>
+
+   <footer class="bg-gray-800 text-white py-4 w-full fixed bottom-0 left-0">
+       <div class="flex justify-between items-center container mx-auto px-4">
+           <span class="text-sm">Fastdex OSINT</span>
+           <a href="http://discord.fastdex.space" class="text-blue-500 hover:text-blue-600 text-sm" target="_blank">Discord</a>
+       </div>
+   </footer>
+   
+
+    </div>
+
+    <script>
+        const searchBtn = document.getElementById('search-btn');
+        const serverIpInput = document.getElementById('server-ip');
+        const serverDetailsLeft = document.getElementById('server-details-left');
+        const serverDetailsRight = document.getElementById('server-details-right');
+        const serverResults = document.getElementById('server-results');
+        const notificationsContainer = document.getElementById('notifications');
+        const serverDetails = document.getElementById('server-details');
+        const chartColumn = document.getElementById('chart-column');
+        let notificationsCount = 0;
+    
+        searchBtn.addEventListener('click', async function() {
+            const ip = serverIpInput.value.trim();
+            if (!ip) {
+                alert("Por favor, ingresa una IP válida.");
+                return;
+            }
+    
+            const API_URL = `https://api.mcsrvstat.us/3/${ip}`;
+            
+            serverResults.classList.add('opacity-0', 'translate-y-4');
+            chartColumn.classList.add('opacity-0', 'translate-y-4');
+            serverDetails.innerHTML = `<p class='text-gray-400'>Mostrando resultados del servidor: ${ip}</p>`;
+    
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+    
+                if (!data.ip) {
+                    serverIpInput.placeholder = `No se pudo obtener los datos de: ${ip}`;
+                    serverDetails.innerHTML = "<p class='text-red-500'>No se encontró información del servidor. Puede que el servidor esté inactivo o la IP sea incorrecta.</p>";
+                    serverResults.classList.add('opacity-0', 'translate-y-4');
+                    chartColumn.classList.add('opacity-0', 'translate-y-4');
+                    return;
+                }
+    
+                const motd = data.motd.clean[0].length > 10 ? data.motd.clean[0].substring(0, 10) + "..." : data.motd.clean[0];
+                
+                serverDetailsLeft.innerHTML = ` 
+                    <p><strong>IP:</strong> ${data.ip} <button class="copy-btn" onclick="copyToClipboard('${data.ip}')">🔗</button></p>
+                    <p><strong>Puerto:</strong> ${data.port} <button class="copy-btn" onclick="copyToClipboard('${data.port}')">🔗</button></p>
+                    <p><strong>DNS:</strong> ${data.hostname || "No disponible"} <button class="copy-btn" onclick="copyToClipboard('${data.hostname}')">🔗</button></p>
+                    <p><strong>MOTD:</strong> ${motd} <button class="copy-btn" onclick="copyToClipboard('${data.motd.clean[0]}')">🔗</button></p>
+                `;
+    
+                serverDetailsRight.innerHTML = ` 
+                    <p><strong>Versión:</strong> ${data.version} <button class="copy-btn" onclick="copyToClipboard('${data.version}')">🔗</button></p>
+                    <p><strong>V. Protocolo:</strong> ${data.protocol.version} (${data.protocol.name}) <button class="copy-btn" onclick="copyToClipboard('${data.protocol.version} (${data.protocol.name})')">🔗</button></p>
+                    <p><strong>Jugadores:</strong> ${data.players.online}/${data.players.max} <button class="copy-btn" onclick="copyToClipboard('${data.players.online}/${data.players.max}')">🔗</button></p>
+                    <p><strong>Software:</strong> ${data.software || "No disponible"} <button class="copy-btn" onclick="copyToClipboard('${data.software}')">🔗</button></p>
+                `;
+    
+                serverResults.classList.remove('opacity-0', 'translate-y-4');
+                serverResults.classList.add('transition-all', 'duration-500');
+                chartColumn.classList.remove('opacity-0', 'translate-y-4');
+                chartColumn.classList.add('transition-all', 'duration-500');
+    
+                if (data.debug.ping !== null) {
+                    updateMap(data.ip);
+                    updateChart(data.players.online, Math.floor(Math.random() * 100));
+                } else {
+                    serverDetailsLeft.innerHTML = "<p class='text-red-500'>No se pudo hacer ping al servidor. Esto puede indicar que el servidor está inactivo o no responde.</p>";
+                }
+            } catch (error) {
+                console.error("Error obteniendo los datos:", error);
+                serverIpInput.placeholder = `Error al obtener datos de: ${ip}`;
+                // Mostrar mensaje de error
+                serverDetails.innerHTML = "<p class='text-red-500'>Hubo un error al intentar obtener los datos del servidor. Verifica la conexión o la IP ingresada.</p>";
+                // Asegurar que los resultados desaparezcan
+                serverResults.classList.add('opacity-0', 'translate-y-4');
+                chartColumn.classList.add('opacity-0', 'translate-y-4');
+            }
+        });
+    
+        function copyToClipboard(text) {
+            text = typeof text === 'object' ? JSON.stringify(text) : text;
+            navigator.clipboard.writeText(text);
+            createNotification(text);
+        }
+    
+        function createNotification(text) {
+            if (notificationsCount >= 6) return;
+    
+            if (text.length > 13) {
+                text = text.substring(0, 13) + "...";
+            }
+    
+            const notification = document.createElement('div');
+            notification.classList.add('bg-gray-800', 'p-4', 'rounded-md', 'shadow-md', 'text-white', 'opacity-0', 'transition-all', 'transform', 'translate-y-4');
+            notification.innerHTML = ` 
+                <p>Copiado: ${text}</p>
+            `;
+            notificationsContainer.appendChild(notification);
+    
+            // Animación de entrada
+            setTimeout(() => notification.classList.remove('opacity-0', 'translate-y-4'), 50);
+
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'translate-y-4');
+                notificationsCount--;
+                setTimeout(() => notification.remove(), 500);
+            }, 5000);
+    
+            notificationsCount++;
+        }
+    
+        function updateMap(ip) {
+        }
+    
+        function updateChart(playersOnline, randomStat) {
+        }
+    </script>
+    
+    <script src="js/stats.js"></script>
+
+</body>
+</html>
