@@ -14,7 +14,7 @@ const chartData = {
     labels: [],
     datasets: [
         {
-            label: 'Usuarios',
+            label: 'Players',
             data: [],
             borderColor: 'rgba(0, 173, 255, 1)',
             backgroundColor: gradientUsers,
@@ -124,7 +124,7 @@ async function fetchServerData(ip) {
         const data = await response.json();
 
         if (!data.ip) {
-            console.error("No se pudo obtener información del servidor.");
+            console.error("Could not get information from the server.");
             return { users: 0, ping: 0 };
         }
 
@@ -133,7 +133,7 @@ async function fetchServerData(ip) {
             ping: data.debug.ping ? Math.floor(Math.random() * 100) : 0 
         };
     } catch (error) {
-        console.error("Error obteniendo datos del servidor:", error);
+        console.error("Error getting data from server:", error);
         return { users: 0, ping: 0 };
     }
 }
