@@ -149,7 +149,7 @@ async function updateChart(ip) {
 
     const { users, ping } = await fetchServerData(ip);
     
-    // Obtener la fecha y hora completas
+    // Get Local Data (ES COUNTRY)
     const now = new Date().toLocaleString('es-ES', { 
         weekday: 'short', 
         year: 'numeric', 
