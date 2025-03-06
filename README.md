@@ -1,4 +1,4 @@
-# FastDex-Minecraft Osint
+# Minecraft-Server-Osint
 
 A webpage for get data of any minecraft server easy and modern.
 
