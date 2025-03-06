@@ -63,7 +63,6 @@
 
     <canvas id="x" class="bg-gray-900" style="width: 100%; height: 40px;"></canvas>
 
-        <!-- Contenedor de notificaciones -->
         <div id="notifications" class="fixed top-0 right-0 mt-4 mr-4 space-y-4 z-50"></div>
 
    <footer class="bg-gray-800 text-white py-4 w-full fixed bottom-0 left-0">
@@ -142,9 +141,7 @@
             } catch (error) {
                 console.error("Error obteniendo los datos:", error);
                 serverIpInput.placeholder = `Error al obtener datos de: ${ip}`;
-                // Mostrar mensaje de error
                 serverDetails.innerHTML = "<p class='text-red-500'>Hubo un error al intentar obtener los datos del servidor. Verifica la conexión o la IP ingresada.</p>";
-                // Asegurar que los resultados desaparezcan
                 serverResults.classList.add('opacity-0', 'translate-y-4');
                 chartColumn.classList.add('opacity-0', 'translate-y-4');
             }
@@ -170,7 +167,6 @@
             `;
             notificationsContainer.appendChild(notification);
     
-            // Animación de entrada
             setTimeout(() => notification.classList.remove('opacity-0', 'translate-y-4'), 50);
 
             setTimeout(() => {
